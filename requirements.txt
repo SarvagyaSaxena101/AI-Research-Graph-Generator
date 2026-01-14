@@ -1,0 +1,7 @@
+pyvis
+langchain-openai
+python-dotenv
+streamlit
+pydantic
+langchain-core
+PyPDF2
