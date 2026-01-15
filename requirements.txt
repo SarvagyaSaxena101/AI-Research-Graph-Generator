@@ -9,3 +9,4 @@ langchain
 faiss-cpu
 tiktoken
 langchain-text-splitters
+langchain_community
