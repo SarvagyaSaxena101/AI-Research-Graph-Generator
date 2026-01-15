@@ -108,24 +108,3 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Powered by [OpenRouter](https://openrouter.ai/) for AI model access
-- Built with [Streamlit](https://streamlit.io/) for the web interface
-- Visualization by [PyVis](https://pyvis.readthedocs.io/)
-- NLP capabilities through [LangChain](https://langchain.com/)
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-username/ai-research-graph-project/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/ai-research-graph-project/discussions)
-
----
-
-**Made with ❤️ for the scientific community**</content>
-<parameter name="filePath">c:\Users\Sarvagya\Desktop\Codes\Projects\AI Research Graph Project\README.md
