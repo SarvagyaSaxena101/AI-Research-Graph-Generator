@@ -5,3 +5,7 @@ streamlit
 pydantic
 langchain-core
 PyPDF2
+langchain
+faiss-cpu
+tiktoken
+langchain-text-splitters

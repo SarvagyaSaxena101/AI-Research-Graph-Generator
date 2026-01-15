@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 from src.genai_core import process_paper_content
-from src.sqlite_graph_utils import SQLiteGraphConnector
+
 
 from pyvis.network import Network
 import streamlit.components.v1 as components
@@ -56,7 +56,7 @@ elif paper_content:
 if st.button("Process Paper"):
     if processed_text:
         st.subheader("Processing Initiated...")
-        st.info("Extracting entities and relations using GenAI and storing in SQLite...")
+        st.info("Extracting entities and relations using GenAI...")
         
         extracted_data = process_paper_content(processed_text)
         
@@ -92,10 +92,20 @@ if st.button("Process Paper"):
                 net.add_node(node_id, label=node_label, title=node_title, color=node_color, size=20)
             
             # Add edges
+            all_nodes = set(net.get_nodes())
             for edge in extracted_data["relations"]: # Use extracted_data
                 source_id = edge["source"] # Use source name
                 target_id = edge["target"] # Use target name
                 relation_type = edge["type"]
+
+                if source_id not in all_nodes:
+                    net.add_node(source_id, label=source_id)
+                    all_nodes.add(source_id)
+                
+                if target_id not in all_nodes:
+                    net.add_node(target_id, label=target_id)
+                    all_nodes.add(target_id)
+                    
                 net.add_edge(source_id, target_id, title=relation_type, label=relation_type, width=2)
 
             # Generate and display the graph
@@ -126,64 +136,4 @@ st.sidebar.info(
     "More features will be added iteratively."
 )
 
-# Section to view the entire graph from database
-st.header("View Current Knowledge Graph")
-graph_viewer_connector = SQLiteGraphConnector(db_path=os.getenv("GRAPH_DATABASE_PATH", "graph.db"))
 
-if graph_viewer_connector.conn:
-    if st.button("Load All Entities and Relations from SQLite"):
-        with st.spinner("Loading graph data..."):
-            graph_data = graph_viewer_connector.get_all_entities_and_relations()
-            if graph_data["nodes"]: # Check for nodes
-                st.subheader("Nodes")
-                st.json(graph_data["nodes"])
-                st.subheader("Relationships")
-                st.json(graph_data["relationships"])
-
-                st.subheader("3. Knowledge Graph Visualization") # Moved visualization here
-                # Create a PyVis network
-                net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white", directed=True)
-                
-                # Add nodes
-                for node in graph_data["nodes"]:
-                    node_id = node["id"]
-                    node_label = node["name"]
-                    node_title = ", ".join(node["labels"]) if node["labels"] else ""
-                    node_color = "#FFC300" # Default color
-
-                    if "Person" in node["labels"]:
-                        node_color = "#DAF7A6"
-                    elif "Concept" in node["labels"]:
-                        node_color = "#FF5733"
-                    elif "Organization" in node["labels"]:
-                        node_color = "#C70039"
-                    elif "Method" in node["labels"]:
-                        node_color = "#900C3F"
-                    elif "Field" in node["labels"]:
-                        node_color = "#581845"
-
-                    net.add_node(node_id, label=node_label, title=node_title, color=node_color, size=20)
-                
-                # Add edges
-                for edge in graph_data["relationships"]:
-                    source_id = edge["source_id"]
-                    target_id = edge["target_id"]
-                    relation_type = edge["type"]
-                    net.add_edge(source_id, target_id, title=relation_type, label=relation_type, width=2)
-
-                # Generate and display the graph
-                try:
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        html_file = os.path.join(tmpdir, "kg_graph_db.html") # Different filename for clarity
-                        net.save_graph(html_file)
-
-                        with open(html_file, "r", encoding="utf-8") as f:
-                            html_content = f.read()
-                        components.html(html_content, height=760)
-                except Exception as e:
-                    st.error(f"Error generating graph visualization from DB: {e}")
-            else:
-                st.info("No data found in the SQLite database.")
-    graph_viewer_connector.close() # Close the connection after use
-else:
-    st.warning("SQLite is not connected. Please check your .env configuration or ensure the database file exists.")
