@@ -1,8 +1,11 @@
 import os
 import streamlit as st
-from src.genai_core import process_paper_content
-
-
+from src.genai_core import (
+    process_paper_content, 
+    generate_key_topics, 
+    generate_hypotheses, 
+    generate_future_work
+)
 from pyvis.network import Network
 import streamlit.components.v1 as components
 import tempfile
@@ -55,80 +58,77 @@ elif paper_content:
 
 if st.button("Process Paper"):
     if processed_text:
-        st.subheader("Processing Initiated...")
-        st.info("Extracting entities and relations using GenAI...")
+        st.header("2. Analysis Results")
         
-        extracted_data = process_paper_content(processed_text)
-        
-        st.subheader("2. Extracted Information")
-        if extracted_data.get("entities") or extracted_data.get("relations"):
-            st.json(extracted_data)
-        else:
-            st.warning("No entities or relations were extracted. Check your API key and input text.")
-        
-        st.subheader("3. Knowledge Graph Visualization")
-        if extracted_data["entities"]: # Use extracted_data for visualization
-            # Create a PyVis network
-            net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white", directed=True)
+        # Create tabs
+        tab1, tab2, tab3, tab4 = st.tabs(["Knowledge Graph", "Key Topics & Methods", "Hypotheses & Ideas", "Future Work"])
+
+        with tab1:
+            st.subheader("Knowledge Graph")
+            with st.spinner("Extracting entities and relations to build the knowledge graph..."):
+                extracted_data = process_paper_content(processed_text)
             
-            # Add nodes
-            for node in extracted_data["entities"]: # Use extracted_data
-                node_id = node["name"] # Use name as ID for visualization for extracted entities
-                node_label = node["name"]
-                node_title = node["type"]
-                node_color = "#FFC300" # Default color
-
-                if "Person" == node["type"]: # Use type for coloring
-                    node_color = "#DAF7A6"
-                elif "Concept" == node["type"]:
-                    node_color = "#FF5733"
-                elif "Organization" == node["type"]:
-                    node_color = "#C70039"
-                elif "Method" == node["type"]:
-                    node_color = "#900C3F"
-                elif "Field" == node["type"]:
-                    node_color = "#581845"
-
-                net.add_node(node_id, label=node_label, title=node_title, color=node_color, size=20)
-            
-            # Add edges
-            all_nodes = set(net.get_nodes())
-            for edge in extracted_data["relations"]: # Use extracted_data
-                source_id = edge["source"] # Use source name
-                target_id = edge["target"] # Use target name
-                relation_type = edge["type"]
-
-                if source_id not in all_nodes:
-                    net.add_node(source_id, label=source_id)
-                    all_nodes.add(source_id)
+            if extracted_data["entities"]:
+                # Create a PyVis network
+                net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white", directed=True)
                 
-                if target_id not in all_nodes:
-                    net.add_node(target_id, label=target_id)
-                    all_nodes.add(target_id)
-                    
-                net.add_edge(source_id, target_id, title=relation_type, label=relation_type, width=2)
+                # Add nodes
+                for node in extracted_data["entities"]:
+                    node_id = node["name"]
+                    node_label = node["name"]
+                    node_title = node["type"]
+                    node_color = "#FFC300" # Default color
 
-            # Generate and display the graph
-            try:
-                # Create a temporary directory
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    html_file = os.path.join(tmpdir, "kg_graph.html")
-                    net.save_graph(html_file)
+                    if "Person" == node["type"]:
+                        node_color = "#DAF7A6"
+                    elif "Concept" == node["type"]:
+                        node_color = "#FF5733"
+                    elif "Organization" == node["type"]:
+                        node_color = "#C70039"
+                    elif "Method" == node["type"]:
+                        node_color = "#900C3F"
+                    elif "Field" == node["type"]:
+                        node_color = "#581845"
 
-                    # Read the HTML file and display it
-                    with open(html_file, "r", encoding="utf-8") as f:
-                        html_content = f.read()
-                    components.html(html_content, height=760)
-            except Exception as e:
-                st.error(f"Error generating graph visualization: {e}")
-        else:
-            st.info("No graph data available to visualize.")
+                    net.add_node(node_id, label=node_label, title=node_title, color=node_color, size=20)
+                
+                # Add edges
+                for edge in extracted_data["relations"]:
+                    net.add_edge(edge["source"], edge["target"], title=edge["type"], label=edge["type"], width=2)
+
+                # Generate and display the graph
+                try:
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        html_file = os.path.join(tmpdir, "kg_graph.html")
+                        net.save_graph(html_file)
+                        with open(html_file, "r", encoding="utf-8") as f:
+                            html_content = f.read()
+                        components.html(html_content, height=760)
+                except Exception as e:
+                    st.error(f"Error generating graph visualization: {e}")
+            else:
+                st.warning("Could not extract any entities or relations to build the graph.")
         
-        st.subheader("4. Generated Hypotheses (Placeholder)")
-        st.write("Testable hypotheses will be generated here.")
-        
+        with tab2:
+            st.subheader("Key Topics and Methodologies")
+            with st.spinner("Generating summary of key topics and methodologies..."):
+                key_topics_md = generate_key_topics(processed_text)
+            st.markdown(key_topics_md)
+            
+        with tab3:
+            st.subheader("Generated Hypotheses and Research Ideas")
+            with st.spinner("Generating novel hypotheses and research ideas..."):
+                hypotheses_md = generate_hypotheses(processed_text)
+            st.markdown(hypotheses_md)
+
+        with tab4:
+            st.subheader("Suggested Future Work")
+            with st.spinner("Generating suggestions for future work..."):
+                future_work_md = generate_future_work(processed_text)
+            st.markdown(future_work_md)
+
     else:
-        st.warning("Please paste some research paper content to process.")
+        st.warning("Please upload a PDF or paste some research paper content to process.")
 
 st.sidebar.header("About")
 st.sidebar.info(
