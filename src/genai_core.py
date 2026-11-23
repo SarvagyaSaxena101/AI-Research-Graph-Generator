@@ -21,7 +21,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENROUTER_API_KEY")
 llm = ChatOpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"), # Explicitly pass the API key
     base_url="https://openrouter.ai/api/v1", # Use base_url for non-OpenAI endpoints
-    model_name="nvidia/nemotron-3-nano-30b-a3b:free",
+    model_name="meta-llama/llama-prompt-guard-2-22m",
     temperature=0.6
 )
 
